@@ -21,7 +21,7 @@ import urllib.error
 import urllib.request
 from typing import Callable, Optional
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "generate",
     "generate_video",
@@ -29,6 +29,7 @@ __all__ = [
     "AuthError",
     "QuotaError",
     "PlanError",
+    "BusyError",
     "RejectedError",
     "MODELS",
     "BASE",
@@ -87,6 +88,10 @@ class PlanError(SayMakerError):
     """This model needs a paid plan or a credit pack."""
 
 
+class BusyError(SayMakerError):
+    """Another run on this account is still rendering. Free accounts run one at a time."""
+
+
 class RejectedError(SayMakerError):
     """The content filter or the model refused the prompt. Reword it."""
 
@@ -113,8 +118,10 @@ def _parse_submit(env: dict) -> str:
     if env.get("code") != 0:
         msg = str(env.get("message") or "request refused")
         low = msg.lower()
+        if (env.get("data") or {}).get("busy") or "is rendering" in low or "at once" in low:
+            raise BusyError(msg)
         if "api key" in low or "no auth" in low:
-            raise AuthError(f"{msg} — create a key at {KEYS_URL}")
+            raise AuthError(msg)
         if "insufficient credits" in low:
             raise QuotaError(msg)
         if "subscription" in low or "plan" in low or "sign in" in low:
@@ -197,7 +204,7 @@ def generate(
     model: Optional[str] = None,
     aspect_ratio: Optional[str] = None,
     api_key: Optional[str] = None,
-    timeout: float = 360.0,
+    timeout: float = 4500.0,
     poll_every: float = 5.0,
     base_url: str = BASE,
     transport: Optional[Transport] = None,
@@ -239,7 +246,7 @@ def generate_video(
     aspect_ratio: str = "16:9",
     sound: bool = True,
     api_key: Optional[str] = None,
-    timeout: float = 900.0,
+    timeout: float = 5400.0,
     poll_every: float = 10.0,
     base_url: str = BASE,
     transport: Optional[Transport] = None,

@@ -9,7 +9,7 @@ url = generate("a paper-cut layered mountain range at dusk, warm rim light")
 clip = generate_video("a paper boat drifting down a rain gutter, low angle, slow push-in")
 ```
 
-Standard library only, no dependencies. Each call returns the URL of the finished file.
+Standard library only, no dependencies. Each call waits for the run and returns the URL of the finished file. Runs on a free account wait in a queue before they start, and the wait grows with each run of the day; a paid plan starts at once. The default timeouts cover the longest wait.
 
 ## API key
 
@@ -51,7 +51,7 @@ generate_video("the camera slowly orbits the statue", image_url="https://example
 generate_video("a street drummer in the rain", model="veo-3-1", resolution="1080p")
 ```
 
-Video takes minutes; `generate_video` waits up to 15 minutes by default (`timeout=`). The default model is `minimax-h3-fast`, the one a free account can run (480p or 768p, 4 to 15 seconds). Veo 3.1, Kling 3.0, Seedance 2.0 and the other video models need a plan or a credit pack; see [pricing](https://saymaker.ai/pricing?utm_source=pypi&utm_medium=package). Each model's options are on its page, e.g. [Veo 3.1](https://saymaker.ai/video/veo-3-1?utm_source=pypi&utm_medium=package), [Kling 3.0](https://saymaker.ai/video/kling-3-0?utm_source=pypi&utm_medium=package), [Seedance 2.0](https://saymaker.ai/video/seedance-2?utm_source=pypi&utm_medium=package).
+The default model is `minimax-h3-fast`, the one a free account can run (480p or 768p, 4 to 15 seconds). Veo 3.1, Kling 3.0, Seedance 2.0 and the other video models need a plan or a credit pack; see [pricing](https://saymaker.ai/pricing?utm_source=pypi&utm_medium=package). Each model's options are on its page, e.g. [Veo 3.1](https://saymaker.ai/video/veo-3-1?utm_source=pypi&utm_medium=package), [Kling 3.0](https://saymaker.ai/video/kling-3-0?utm_source=pypi&utm_medium=package), [Seedance 2.0](https://saymaker.ai/video/seedance-2?utm_source=pypi&utm_medium=package).
 
 ## Errors worth catching
 
@@ -60,6 +60,7 @@ Each failure is its own subclass of `SayMakerError`, so you can branch on what t
 - `AuthError` — no key, or the key is wrong or deleted
 - `QuotaError` — the account is out of credits
 - `PlanError` — that model needs a paid plan or a credit pack
+- `BusyError` — another run on this account is still rendering; free accounts run one at a time
 - `RejectedError` — the content filter or the model refused the prompt; rewrite it rather than retrying
 
 The API answers refusals with HTTP 200 and an error code in the body, so a client that only checks the status code reports a refusal as success. This one reads the body.
